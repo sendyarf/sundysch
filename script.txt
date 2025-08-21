@@ -1,0 +1,100 @@
+// --- HELPER FUNCTIONS ---
+function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } let color = '#'; for (let i = 0; i < 3; i++) { const value = (hash >> (i * 8)) & 0xFF; color += ('00' + value.toString(16)).substr(-2); } return color; }
+
+function formatMatchDate(match) {
+    const matchDateTime = new Date(`${match.kickoff_date}T${match.kickoff_time}:00+07:00`);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+    const timeString = matchDateTime.toLocaleTimeString('en-GB', timeOptions);
+    const matchDateOnly = new Date(matchDateTime.getFullYear(), matchDateTime.getMonth(), matchDateTime.getDate());
+
+    if (matchDateOnly.getTime() === today.getTime()) return `Today, ${timeString}`;
+    if (matchDateOnly.getTime() === tomorrow.getTime()) return `Tomorrow, ${timeString}`;
+    
+    const dateOptions = { day: 'numeric', month: 'short' };
+    const dateString = matchDateTime.toLocaleDateString('en-US', dateOptions);
+    return `${dateString}, ${timeString}`;
+}
+
+// --- CORE LOGIC ---
+async function fetchSchedule() { try { const response = await fetch('https://weekendsch.pages.dev/sch/schedule.json'); if (!response.ok) throw new Error('Network response was not ok'); return await response.json(); } catch (error) { console.error('Error fetching schedule:', error); return []; } }
+function isLiveMatch(match, currentTime) { if (match.match_date === 'live' && match.match_time === 'live') return true; if (!match.match_date || !match.match_time || !match.duration) return false; const matchDateTime = new Date(`${match.match_date}T${match.match_time}:00+07:00`); const durationHours = parseFloat(match.duration); const endTime = new Date(matchDateTime.getTime() + durationHours * 60 * 60 * 1000); return currentTime >= matchDateTime && currentTime <= endTime; }
+function isMatchExpired(match, currentTime) { if (match.match_date === 'live' || match.duration === 'live') return false; if (!match.match_date || !match.match_time || !match.duration) return true; const matchDateTime = new Date(`${match.match_date}T${match.match_time}:00+07:00`); const durationHours = parseFloat(match.duration); const endTime = new Date(matchDateTime.getTime() + durationHours * 60 * 60 * 1000); return currentTime > endTime; }
+function sortMatches(matches, currentTime) { return matches.sort((a, b) => { const isALive = isLiveMatch(a, currentTime); const isBLive = isLiveMatch(b, currentTime); if (isALive && !isBLive) return -1; if (!isALive && isBLive) return 1; const dateA = new Date(`${a.match_date}T${a.match_time}:00+07:00`); const dateB = new Date(`${b.match_date}T${b.match_time}:00+07:00`); return dateA - dateB; }); }
+function showModal(url) { document.getElementById('stream-iframe').src = url; document.getElementById('stream-modal').classList.add('show'); }
+function closeModal() { document.getElementById('stream-iframe').src = ''; document.getElementById('stream-modal').classList.remove('show'); }
+async function copyMatchUrl(matchId) { const url = `${window.location.origin}${window.location.pathname}?match=${encodeURIComponent(matchId)}`; const button = document.querySelector(`[data-match-id="${matchId.replace(/"/g, '\\"')}"]`); if (!button) return; const originalIcon = button.innerHTML; const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`; try { await navigator.clipboard.writeText(url); button.innerHTML = checkIcon; setTimeout(() => { button.innerHTML = originalIcon; }, 2000); } catch (error) { console.error('Failed to copy URL:', error); } }
+async function checkAutoPlay() { const urlParams = new URLSearchParams(window.location.search); const matchId = decodeURIComponent(urlParams.get('match') || ''); if (matchId) { const schedule = await fetchSchedule(); const match = schedule.find(m => m.id === matchId); if (match && match.servers && match.servers.length > 0 && !isMatchExpired(match, new Date())) { showModal(match.servers[0].url); } } }
+function filterMatches(matches, searchTerm) { if (!searchTerm) return matches; const lowerTerm = searchTerm.toLowerCase(); return matches.filter(match => match.team1.name.toLowerCase().includes(lowerTerm) || match.team2.name.toLowerCase().includes(lowerTerm) || match.league.toLowerCase().includes(lowerTerm)); }
+
+// --- RENDER FUNCTION ---
+async function renderSchedule(searchTerm = '') {
+    const scheduleDiv = document.getElementById('schedule');
+    let skeletonHTML = '';
+    for (let i = 0; i < 4; i++) { skeletonHTML += `<div class="skeleton-card space-y-4"><div class="flex justify-between items-center"><div class="skeleton-line w-1/4 h-4"></div><div class="skeleton-line w-1/3 h-4"></div></div><div class="skeleton-line w-full h-8 mt-4"></div><div class="skeleton-line w-2/3 h-8"></div></div>`; }
+    scheduleDiv.innerHTML = skeletonHTML;
+    
+    const schedule = await fetchSchedule();
+    const currentTime = new Date();
+    const filteredSchedule = schedule.filter(match => !isMatchExpired(match, currentTime));
+    const sortedSchedule = sortMatches(filteredSchedule, currentTime);
+    const searchedSchedule = filterMatches(sortedSchedule, searchTerm);
+    
+    scheduleDiv.innerHTML = '';
+
+    if (searchedSchedule.length === 0) { scheduleDiv.innerHTML = '<div class="text-center py-16"><h3 class="font-semibold text-gray-800">No Matches Found</h3><p class="text-sm text-gray-500">There are no matches scheduled that fit your search.</p></div>'; return; }
+
+    searchedSchedule.forEach(match => {
+        const isLive = isLiveMatch(match, currentTime);
+        const matchElement = document.createElement('div');
+        matchElement.className = 'match-card';
+        
+        matchElement.innerHTML = `
+            <div class="match-card-header flex justify-between items-center p-4">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${match.league}</p>
+                <div class="flex items-center gap-4">
+                    ${isLive ? '<span class="live-badge">LIVE</span>' : `<p class="text-sm font-medium text-gray-600">${formatMatchDate(match)}</p>`}
+                    <button class="copy-button" data-match-id="${match.id}" onclick="event.stopPropagation(); copyMatchUrl('${match.id.replace(/'/g, "\\'")}')" title="Copy Match Link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="match-card-body">
+                <div class="flex items-center gap-3"><div class="team-indicator" style="background-color: ${stringToColor(match.team1.name)}"></div><h2 class="text-xl font-bold text-gray-900">${match.team1.name}</h2></div>
+                <div class="flex items-center gap-3 mt-3"><div class="team-indicator" style="background-color: ${stringToColor(match.team2.name)}"></div><h2 class="text-xl font-bold text-gray-900">${match.team2.name}</h2></div>
+            </div>
+            <div class="servers-container">
+                <div><div class="bg-gray-50 p-4 border-t border-gray-100"><div class="flex flex-wrap gap-2">
+                ${match.servers && match.servers.length > 0 ? match.servers.map(server => `<button class="stream-button text-sm px-3 py-1.5 rounded-lg" onclick="event.stopPropagation(); showModal('${server.url}')">${server.label}</button>`).join('') : '<p class="no-streams text-sm">No streams available.</p>'}
+                </div></div></div>
+            </div>
+        `;
+        
+        matchElement.addEventListener('click', () => { matchElement.querySelector('.servers-container').classList.toggle('show'); });
+        scheduleDiv.appendChild(matchElement);
+    });
+}
+
+// --- EVENT LISTENERS & INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+
+    function showTab(tabId) { document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); document.querySelectorAll('.nav-tab').forEach(tab => { if (tab.dataset.tab === tabId) tab.classList.add('active'); else tab.classList.remove('active'); }); document.getElementById(`${tabId}-tab`).classList.add('active'); if (tabId === 'match') { renderSchedule(searchInput.value); } }
+    document.querySelectorAll('.nav-tab').forEach(tab => { if(tab.dataset.tab) { tab.addEventListener('click', () => { showTab(tab.dataset.tab); const mobileNav = document.getElementById('nav-items'); if (mobileNav) mobileNav.classList.remove('show'); const hamburger = document.getElementById('hamburger-toggle'); if (hamburger) hamburger.classList.remove('open'); }); } });
+    document.getElementById('search-toggle').addEventListener('click', (e) => { e.stopPropagation(); if (!document.querySelector('[data-tab="match"]').classList.contains('active')) { showTab('match'); } const sc = document.getElementById('search-container'); sc.classList.toggle('show'); if (sc.classList.contains('show')) searchInput.focus(); });
+    document.getElementById('hamburger-toggle').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('nav-items').classList.toggle('show'); document.getElementById('hamburger-toggle').classList.toggle('open'); });
+    document.addEventListener('click', (e) => { const ni = document.getElementById('nav-items'); const ht = document.getElementById('hamburger-toggle'); if (ni && ht && !ni.contains(e.target) && !ht.contains(e.target)) { ni.classList.remove('show'); ht.classList.remove('open'); } const sc = document.getElementById('search-container'); const st = document.getElementById('search-toggle'); if (sc && st && !sc.contains(e.target) && !st.contains(e.target)) { sc.classList.remove('show'); } });
+    
+    searchInput.addEventListener('input', (e) => { const searchTerm = e.target.value; renderSchedule(searchTerm); clearSearchBtn.style.display = searchTerm ? 'flex' : 'none'; });
+    clearSearchBtn.addEventListener('click', () => { searchInput.value = ''; renderSchedule(''); clearSearchBtn.style.display = 'none'; searchInput.focus(); });
+
+    document.getElementById('scroll-top-button').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => { if (window.scrollY > 300) document.getElementById('scroll-top-button').classList.add('show'); else document.getElementById('scroll-top-button').classList.remove('show'); });
+    document.querySelector('.close-button').addEventListener('click', closeModal);
+
+    Promise.all([renderSchedule(), checkAutoPlay()]);
+    setInterval(() => { if (document.querySelector('.nav-tab[data-tab="match"]').classList.contains('active')) { renderSchedule(searchInput.value); } }, 60000);
+});
