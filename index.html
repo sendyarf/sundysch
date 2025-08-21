@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOVOET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold tracking-tighter text-gray-900">GOVOET</h1>
+            <div class="flex items-center gap-1">
+                <div class="hidden md:flex items-center gap-1" id="nav-items-desktop">
+                    <button class="nav-tab active" data-tab="match">Match</button>
+                    <button class="nav-tab" data-tab="livescore">Livescore</button>
+                    <a href="https://saweria.co/justfutball" target="_blank" rel="noopener noreferrer" class="nav-tab">Donate</a>
+                    <a href="https://govoettv.blogspot.com/" target="_blank" rel="noopener noreferrer" class="nav-tab">Alternative Link</a>
+                </div>
+                <button id="search-toggle" class="nav-icon-button" aria-label="Toggle Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+                <button id="hamburger-toggle" class="hamburger-menu nav-icon-button md:hidden" aria-label="Toggle Menu">
+                    <svg class="hamburger-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+        <div class="nav-items md:hidden" id="nav-items">
+            <button class="nav-tab dropdown-item active text-left w-full" data-tab="match">Match</button>
+            <button class="nav-tab dropdown-item text-left w-full" data-tab="livescore">Livescore</button>
+            <a href="https://saweria.co/justfutball" target="_blank" rel="noopener noreferrer" class="nav-tab dropdown-item text-left w-full">Donate</a>
+            <a href="https://govoettv.blogspot.com/" target="_blank" rel="noopener noreferrer" class="nav-tab dropdown-item text-left w-full">Alternative Link</a>
+        </div>
+        <div class="search-container" id="search-container">
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                    <input type="text" id="search-input" class="search-input" placeholder="Search for a team or league...">
+                    <button id="clear-search-btn" class="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer" style="display: none;"><svg class="h-5 w-5 text-gray-400 hover:text-gray-900 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div id="match-tab" class="tab-content active"><div id="schedule" class="space-y-2"></div></div>
+        <div id="livescore-tab" class="tab-content"><script type="text/javascript" src="https://www.livescore.bz/api.livescore.0.1.js" api="livescore" async></script><a href="https://www.livescore.bz" sport="football(soccer)" data-1="today" lang="en">livescore football</a></div>
+    </div>
+
+    <!-- Modal & Scroll Button -->
+    <div id="stream-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-button">&times;</button>
+            <iframe id="stream-iframe" class="modal-iframe" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer"></iframe>
+        </div>
+    </div>
+    <button id="scroll-top-button" class="scroll-top-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+
+    <script src="/script.js" defer></script>
+</body>
+</html>
