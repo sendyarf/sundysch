@@ -13,6 +13,74 @@ body {
     padding: 1.5rem;
 }
 
+/* --- RESPONSIVE TYPOGRAPHY --- */
+html {
+    font-size: 100%; /* 16px by default */
+}
+
+/* Base font size for mobile - made smaller */
+body {
+    font-size: 0.8125rem; /* 13px (reduced from 14px) */
+    line-height: 1.5;
+}
+
+/* Small mobile devices */
+@media (max-width: 359px) {
+    body {
+        font-size: 0.75rem; /* 12px for very small devices */
+    }
+}
+
+/* Tablet and larger */
+@media (min-width: 640px) {
+    body {
+        font-size: 0.875rem; /* 14px (reduced from 15px) */
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    body {
+        font-size: 0.9375rem; /* 15px (reduced from 16px) */
+    }
+}
+
+/* Larger screens */
+@media (min-width: 1280px) {
+    body {
+        font-size: 1rem; /* 16px (reduced from 17px) */
+    }
+}
+
+/* Adjust heading sizes for better mobile readability */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+}
+
+/* Smaller heading sizes for mobile */
+h1 { font-size: 1.5rem; }   /* 24px (reduced from 28px) */
+h2 { font-size: 1.25rem; }  /* 20px (reduced from 24px) */
+h3 { font-size: 1.125rem; } /* 18px (reduced from 20px) */
+h4 { font-size: 1rem; }     /* 16px (reduced from 18px) */
+
+/* Tablet and up */
+@media (min-width: 640px) {
+    h1 { font-size: 1.75rem; }  /* 28px */
+    h2 { font-size: 1.5rem; }   /* 24px */
+    h3 { font-size: 1.25rem; }  /* 20px */
+    h4 { font-size: 1.125rem; } /* 18px */
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    h1 { font-size: 2rem; }     /* 32px */
+    h2 { font-size: 1.75rem; }  /* 28px */
+    h3 { font-size: 1.5rem; }   /* 24px */
+    h4 { font-size: 1.25rem; }  /* 20px */
+}
+
 /* --- MODERN MATCH CARD STYLES --- */
 .match-card {
     background: #ffffff;
