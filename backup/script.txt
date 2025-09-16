@@ -96,5 +96,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.close-button').addEventListener('click', closeModal);
 
     Promise.all([renderSchedule(), checkAutoPlay()]);
-    setInterval(() => { if (document.querySelector('.nav-tab[data-tab="match"]').classList.contains('active')) { renderSchedule(searchInput.value); } }, 60000);
+    setInterval(() => { if (document.querySelector('.nav-tab[data-tab="match"]').classList.contains('active')) { renderSchedule(searchInput.value); } }, 300000);
 });
